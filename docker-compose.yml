@@ -1,0 +1,110 @@
+---
+version: '2'
+
+services:
+
+  cockroach1:
+    image: cockroachdb/cockroach:latest
+    container_name: cockroach1
+    hostname: cockroach1
+    volumes:
+      - '$COCKROACH1_DATA_DIR:/cockroach/cockroach-data'
+      - '$COCKROACH1_CERTS_DIR:/certs'
+
+    ports:
+      - "26257:26257"
+      - "8880:8080"
+    command: "start --certs-dir=/certs --store=cockroach1 --advertise-addr=${COCKROACH1_HOST}:26257 --join=${COCKROACH1_HOST}:26257"
+
+  cockroach2:
+    image: cockroachdb/cockroach:latest
+    container_name: cockroach2
+    hostname: cockroach2
+    volumes:
+      - '$COCKROACH2_DATA_DIR:/cockroach/cockroach-data'
+      - '$COCKROACH2_CERTS_DIR:/certs'
+    ports:
+      - "26258:26257"
+      - "8881:8080"
+    command: "start --certs-dir=/certs --store=cockroach2 --advertise-addr=${COCKROACH2_HOST}:26258 --join=${COCKROACH1_HOST}:26257"
+
+  cockroach3:
+    image: cockroachdb/cockroach:latest
+    container_name: cockroach3
+    hostname: cockroach3
+    volumes:
+      - '$COCKROACH3_DATA_DIR:/cockroach/cockroach-data'
+      - '$COCKROACH3_CERTS_DIR:/certs'
+    ports:
+      - "26259:26257"
+      - "8882:8080"
+    command: "start --certs-dir=/certs --store=cockroach3 --advertise-addr=${COCKROACH3_HOST}:26259 --join=${COCKROACH1_HOST}:26257"
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker:
+    image: confluentinc/cp-kafka:7.4.0
+    hostname: broker
+    container_name: broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:latest
+    hostname: schema-registry
+    container_name: schema-registry
+
+    depends_on:
+      - broker
+
+    ports:
+      - 8081:8081
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:9092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    volumes:
+      - ./data:/tmp/data
+
+  ksqldb-server:
+    image: confluentinc/ksqldb-server:0.29.0
+    hostname: ksqldb-server
+    container_name: ksqldb-server
+    depends_on:
+      - broker
+    ports:
+      - "8088:8088"
+    environment:
+      KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_BOOTSTRAP_SERVERS: broker:9092
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+
+  ksqldb-cli:
+    image: confluentinc/ksqldb-cli:0.29.0
+    container_name: ksqldb-cli
+    depends_on:
+      - broker
+      - ksqldb-server
+    entrypoint: /bin/sh
+    tty: true

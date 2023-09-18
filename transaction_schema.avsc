@@ -1,0 +1,9 @@
+{
+  "type": "record",
+  "name": "TransactionRecord",
+  "fields": [
+    { "name": "transactionHash", "type": "string" },
+    { "name": "brandId", "type": "string" },
+    { "name": "timestamp", "type": "long" }
+  ]
+}
