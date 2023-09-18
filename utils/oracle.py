@@ -1,5 +1,5 @@
 import requests
-from statuschecker import check_status
+from utils.statuschecker import check_status
 import time
 # Replace with your Etherscan API key
 etherscan_api_key = '7UF5DDU7F2QK5E9IH557Z8T593TPY6HXTC'

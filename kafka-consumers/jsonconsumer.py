@@ -1,8 +1,8 @@
 import json
 from kafka import KafkaConsumer
-from oracle import fetch_cost
-from fetchprice import fetch_eth_price
-from cockroach_connect import getConnection
+from utils.oracle import fetch_cost
+from utils.fetchprice import fetch_eth_price
+from utils.cockroach_connect import getConnection
 import logging
 from datetime import datetime
 import re
