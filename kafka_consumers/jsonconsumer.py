@@ -1,3 +1,8 @@
+
+import sys
+sys.path.append('/Users/poamen/projects/pau/drp/reflective/')
+
+
 import json
 from kafka import KafkaConsumer
 from utils.oracle import fetch_cost
@@ -7,7 +12,9 @@ import logging
 from datetime import datetime
 import re
 from psycopg import sql
-from jsonproducer import produce_cost_logs
+from kafka_producers.jsonproducer import produce_cost_logs
+
+
 # Get mandatory connection
 conn = getConnection(True)
 

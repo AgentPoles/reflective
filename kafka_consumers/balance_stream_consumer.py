@@ -1,3 +1,7 @@
+
+import sys
+sys.path.append('/Users/poamen/projects/pau/drp/reflective/')
+
 import json
 from kafka import KafkaConsumer
 from utils.oracle import fetch_cost
